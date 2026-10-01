@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pemutar Lagu Sederhana</title>
+  <style>
+    /* Styling sederhana agar tampilan rapi di tengah halaman */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f4f4f9;
+    }
+
+    .player-card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 300px;
+    }
+
+    /* Gambar lagu di tengah */
+    .cover-art {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    /* Judul lagu di bawah gambar */
+    .song-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 15px 0 5px 0;
+      color: #333;
+    }
+
+    /* Durasi dan Tombol Skip dalam satu baris */
+    .control-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+      padding: 0 10px;
+    }
+
+    .duration {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .btn-skip {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-skip:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player-card">
+    <!-- Gambar Lagu di Tengah -->
+    <img id="cover" class="cover-art" src="" alt="Gambar Sampul Lagu">
+
+    <!-- Judul Lagu di Bawah Gambar -->
+    <div id="title" class="song-title">Loading...</div>
+
+    <!-- Elemen Audio (Sembunyi/Hidden) -->
+    <audio id="audio-player"></audio>
+
+    <!-- Di Bawah Judul: Durasi di Kiri & Tombol Skip di Kanan -->
+    <div class="control-bar">
+  <span id="duration" class="duration">00:00 / 00:00</span>
+  <div>
+    <button id="btn-stop" class="btn-skip" onclick="togglePlayStop()" style="background-color: #dc3545; margin-right: 5px;">Stop ⏹</button>
+    <button class="btn-skip" onclick="nextSong()">Skip ⏭</button>
+  </div>
+  </div>
+
+  <script>
+    // 1. Data Lagu dan Gambarmu
+    const playlist = [
+      {
+        title: "Sempurna - Andra and The Backbone",
+        image: "https://images.genius.com/aabf4b7d67713bed262648b9665bcc39.1000x1000x1.jpg" , // Ganti dengan URL / file gambarmu
+        audio: "https://mdl.y2dl.space/dl/mp3/jStNaVCW838.mp3?sig=WtNVcwJiuV4UhudWzsp0lGGfG_aNURwjWzRcf-DuZzPqna2B8X3w--AdXazeC_mkEiia6pmV7CXgjQLWrOZ7hqoTAEYs30wkRpC-sN1y3h-LPB3Lm6knBj1-SAdy3QFM0jzWQgmYf8Ov88xIJAJ6s7gyezPoCViWN9shMphveBTU6VM52qWsMgwbApV_70EehgQShULHtWUmXsdnbVet4yj_WFcg67ihms3owtViR9R0yNzWbuZrkqmet1Liglz11WbotxLBnrXjrDc27DGT85R52kaYbw.0K27Phb1QbzfJV61XM8_lsa3uze56l9vOA0mBB-4seE&name=Andra+And+The+Backbone+-+Sempurna+%28Official+Music+Video%29" // Ganti dengan URL / file lagu MP3
+      },
+
+      {
+        title: "Cinta Terakhir - Ari Lasso",
+        image: "https://i.scdn.co/image/e850a6af940d44800207bd7cf5d2dbded6ca5c1e",
+        audio:"https://mdl.y2dl.space/dl/mp3/m-q1V4Vx02c.mp3?sig=e7v2wZgIaSDDOx6CeCKJI0eA7shW2vf8Tm7J9iopvofMluQ-gfaThsjlTdxwTBe-i0iA8KOXCuqoj1twh4iiChu41BFzNcC6m6UWIqtYpAmPruLsFx2BLXZ9wCRpiIBTWJNtq7UQSCfI72sUjbllEHKF0_YJ_xUQHF_4BFlRLWutzAUrU_zBpqa9HZFtQRPuximAB-ywxUV4b-3nKLP3UOVU_tD4KX8NZKJuk6tbs5p9ysM2T81qI-BjaxJHAgipikvtKrOJqytNB2QhT2_Q4aik8iUOvA.1vXUgEFGDNl4dXeLC2yvg7ApB6Cu9p4-PKjb0lFfTTU&name=Ari+Lasso+-+Cinta+Terakhir+%7C+Official+4K+Remastered+Video"
+      },
+      {
+        title: "Utopia - Baby Doll",
+        image: "https://i.scdn.co/image/f8872e16111c0d0fdf5bce085d8e0bd3858c075c",
+        audio: "https://mdl.y2dl.space/dl/mp3/jTGfV1eZios.mp3?sig=R7pbsYBfcObivzf1e5HpET0VEg_qsBqgiybLa-_UK2O0QE4XVf4zZMpaYUVodMgsXa1whRuyftbRzagsUB0e_fPSCezQWoZ26OfvYM5FTq68LGCK_ZhyYayK8L8PKgrNs-ukM_ANuMQXHIzhR1kQcNG-N0pPWrggnLC3TBLOmbynFcwswzyhl7PIbenQ_7ku-l1ab7lnFEhy-uJTzfwuouPU36d-ih4C7Kt5sFXtXgZYxc004Z3VonO9pYhQvXKRFvhR4Ck4DW6jObZuDQBKriS052OQhg.BCyTgU_PHE47pwEijdGXgg4dZiIwI_po1lA8mK5i1K8&name=Utopia+-+Baby+Doll+%7C+Official+Music+Video"
+      }
+    ];
+
+    let currentIndex = 0;
+
+    // Ambil elemen HTML berdasarkan ID
+    const audioPlayer = document.getElementById('audio-player');
+    const coverElement = document.getElementById('cover');
+    const titleElement = document.getElementById('title');
+    const durationElement = document.getElementById('duration');
+
+    // Fungsi untuk memuat dan memutar lagu
+    function loadSong(index) {
+      const song = playlist[index];
+      titleElement.innerText = song.title;
+      coverElement.src = song.image;
+      audioPlayer.src = song.audio;
+      audioPlayer.play();
+    }
+
+    // Fungsi tombol Skip
+    function nextSong() {
+      currentIndex = (currentIndex + 1) % playlist.length; // Pindah ke lagu berikutnya
+      loadSong(currentIndex);
+    }
+
+    // Fungsi tombol Stop (Menghentikan audio dan mengembalikan durasi ke awal)
+function stopSong() {
+  audioPlayer.pause();
+  audioPlayer.currentTime = 0;
+}
+
+// Fungsi untuk Stop (Pause) dan Melanjutkan (Play) dari posisi terakhir
+function togglePlayStop() {
+  const stopBtn = document.getElementById('btn-stop');
+
+  if (audioPlayer.paused) {
+    audioPlayer.play();
+    stopBtn.innerText = "Stop ⏹";
+    stopBtn.style.backgroundColor = "#dc3545"; // Warna merah saat lagu diputar
+  } else {
+    audioPlayer.pause(); // Menghentikan sementara di detik terakhir
+    stopBtn.innerText = "Play ▶";
+    stopBtn.style.backgroundColor = "#28a745"; // Berubah warna hijau saat berhenti
+  }
+}
+
+    // Ketika lagu selesai, otomatis lanjut ke lagu berikutnya
+    audioPlayer.addEventListener('ended', nextSong);
+
+    // Update tampilan durasi (Waktu Berjalan / Durasi Total)
+    audioPlayer.addEventListener('timeupdate', () => {
+      if (!isNaN(audioPlayer.duration)) {
+        const currentMin = Math.floor(audioPlayer.currentTime / 60);
+        const currentSec = Math.floor(audioPlayer.currentTime % 60).toString().padStart(2, '0');
+        const totalMin = Math.floor(audioPlayer.duration / 60);
+        const totalSec = Math.floor(audioPlayer.duration % 60).toString().padStart(2, '0');
+
+        durationElement.innerText = `${currentMin}:${currentSec} / ${totalMin}:${totalSec}`;
+      }
+    });
+
+    // Memutar lagu pertama saat halaman baru pertama kali dibuka
+    // (Catatan: Beberapa browser mewajibkan klik pertama dari user agar audio bisa menyala)
+    window.onload = () => {
+      loadSong(currentIndex);
+      function loadSong(index) {
+  const song = playlist[index];
+  titleElement.innerText = song.title;
+  coverElement.src = song.image;
+  audioPlayer.src = song.audio;
+  audioPlayer.play();
+
+  // --- Tambahkan 2 baris ini di bagian akhir loadSong ---
+  const stopBtn = document.getElementById('btn-stop');
+  if (stopBtn) {
+    stopBtn.innerText = "Stop ⏹";
+    stopBtn.style.backgroundColor = "#dc3545";
+  }
+} };
+    
+  </script>
+
+</body>
+</html>
